@@ -1,271 +1,1117 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workout Plan</title>
+<title>Workout Tracker</title>
 
 <style>
-:root {
-  --bg:#ffffff;
-  --text:#111111;
-  --card:#f2f2f2;
-  --accent:#2563eb;
+* {
+  box-sizing: border-box;
 }
 
-body.dark {
-  --bg:#0f172a;
-  --text:#f1f5f9;
-  --card:#1e293b;
-  --accent:#3b82f6;
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f4;
+  --bg-card: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --accent-color: #2d5f2e;
+  --shadow: rgba(0,0,0,0.1);
+}
+
+body.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #0f0f0f;
+  --bg-card: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --border-color: #404040;
+  --accent-color: #4a9d4d;
+  --shadow: rgba(0,0,0,0.3);
 }
 
 body {
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:var(--bg);
-  color:var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
 }
 
-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px;
-  background:var(--card);
-  position:sticky;
-  top:0;
+.header-bar {
+  background: var(--bg-card);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 4px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 2px solid var(--accent-color);
 }
 
-button {
-  background:var(--accent);
-  color:white;
-  border:none;
-  padding:8px 12px;
-  border-radius:6px;
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  color: var(--text-primary);
 }
 
-.menu {
-  position:fixed;
-  top:0;
-  left:-250px;
-  width:250px;
-  height:100%;
-  background:var(--card);
-  padding:20px;
-  transition:0.3s;
-  z-index:1000;
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
 }
 
-.menu.open {
-  left:0;
+.dark-mode-toggle {
+  background: none;
+  border: 2px solid var(--accent-color);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
-.menu ul {
-  list-style:none;
-  padding:0;
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--bg-card);
+  box-shadow: 2px 0 8px var(--shadow);
+  transition: left 0.3s ease;
+  z-index: 200;
+  overflow-y: auto;
+  border-right: 2px solid var(--accent-color);
 }
 
-.menu li {
-  padding:12px 0;
-  cursor:pointer;
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 2px solid var(--accent-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.menu-items {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.menu-items li {
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 16px;
+  transition: background 0.2s;
+}
+
+.menu-items li:hover {
+  background: var(--bg-secondary);
+}
+
+.menu-items li.active {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 600;
 }
 
 .overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.5);
-  display:none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  z-index: 150;
 }
 
-.overlay.show {
-  display:block;
+.overlay.active {
+  display: block;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
 .section {
-  padding:16px;
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+/* Miles Tracker */
+.miles-tracker {
+  background: var(--bg-card);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 2px solid var(--accent-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.miles-tracker label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.miles-tracker input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Goals Section */
+.goals-list {
+  display: grid;
+  gap: 12px;
+}
+
+.goal-item {
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid var(--accent-color);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.goal-item:active {
+  transform: scale(0.98);
+}
+
+.goal-checkbox {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.goal-text {
+  font-size: 18px;
+  flex: 1;
+}
+
+.goal-item.completed .goal-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+/* Progression Rules Section */
+.rules-content {
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: 12px;
+  border: 2px solid var(--accent-color);
+  line-height: 1.6;
+}
+
+.rules-content h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: var(--accent-color);
+}
+
+.rules-content p {
+  margin-bottom: 12px;
+}
+
+/* Protein Tracker */
+.protein-week-selector {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 2px solid var(--accent-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.protein-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.protein-day {
+  background: var(--bg-card);
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--accent-color);
+}
+
+.protein-day h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.protein-meals {
+  display: grid;
+  gap: 8px;
+}
+
+.protein-meal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.protein-meal label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.protein-meal input {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.protein-total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+/* Workout Section */
+.week-selector {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 2px solid var(--accent-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.day-list {
+  display: grid;
+  gap: 12px;
 }
 
 .day-card {
-  background:var(--card);
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:12px;
-  cursor:pointer;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 2px solid var(--accent-color);
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.day-card:active {
+  transform: scale(0.98);
+}
+
+.day-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.day-card .progress {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.workout-view {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 2px solid var(--accent-color);
+  padding: 16px;
+}
+
+.workout-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 8px;
+  color: var(--text-primary);
+}
+
+.workout-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
 }
 
 .exercise {
-  background:var(--card);
-  padding:10px;
-  margin-bottom:8px;
-  border-radius:6px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.hidden { display:none; }
+.exercise:last-child {
+  border-bottom: none;
+}
 
-input[type=number], textarea {
-  width:100%;
-  padding:6px;
-  margin-top:4px;
-  margin-bottom:6px;
+.exercise-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.variant-selector {
+  margin-bottom: 12px;
+}
+
+.variant-selector select {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.weight-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.weight-input-row label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+.weight-input-row input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.sets-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.set-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 50px;
+}
+
+.set-row input[type="number"] {
+  width: 80px;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.set-row input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.reps-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.optional-exercise {
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.optional-exercise input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.optional-exercise label {
+  font-size: 14px;
+  flex: 1;
+}
+
+.notes-section {
+  margin-top: 12px;
+}
+
+.notes-section textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.notes-section textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
 }
 </style>
+
 </head>
+
 <body>
 
-<header>
-  <button id="menuBtn">☰</button>
-  <h3>Workout Plan</h3>
-  <button id="darkToggle">🌙</button>
-</header>
+<div class="header-bar">
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <h1 class="header-title" id="headerTitle">Workouts</h1>
+  <button class="dark-mode-toggle" id="darkModeToggle">🌙</button>
+</div>
 
-<div class="menu" id="menu">
-  <ul>
-    <li data-view="workouts">Workouts</li>
-    <li data-view="progression">Progression Rules</li>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>Menu</h2>
+    <button class="close-btn" id="closeBtn">×</button>
+  </div>
+  <ul class="menu-items">
+    <li data-section="goals">Goals</li>
+    <li data-section="progression">Progression Rules</li>
+    <li data-section="protein">Protein Tracker</li>
+    <li data-section="workouts" class="active">Workouts</li>
   </ul>
 </div>
+
 <div class="overlay" id="overlay"></div>
 
-<div class="section" id="workoutsSection">
-  <label>Select Week:</label>
-  <select id="weekSelector"></select>
-  <div id="dayList"></div>
-  <div id="workoutView" class="hidden">
-    <button id="backBtn">← Back</button>
-    <h2 id="workoutTitle"></h2>
+<div class="container">
+  <!-- Goals Section -->
+  <div id="goals" class="section">
+    <div class="goals-list" id="goalsList"></div>
+  </div>
+
+  <!-- Progression Rules Section -->
+
+  <div id="progression" class="section">
+    <div class="rules-content">
+      <h3>Progression Rules</h3>
+      <p>If you hit top reps clean → add weight next week.</p>
+
+```
+  <p><strong>Bench/OHP</strong> → +2.5–5 lbs</p>
+  <p><strong>Squat</strong> → +5 lbs when bar speed is good</p>
+  <p><strong>Pull-ups</strong> → Add 5 lbs when all sets are clean</p>
+  <p><strong>Abs</strong> → Add reps or weight weekly</p>
+</div>
+```
+
+  </div>
+
+  <!-- Protein Tracker Section -->
+
+  <div id="protein" class="section">
+    <select class="protein-week-selector" id="proteinWeekSelector">
+      <option value="1">Week 1</option>
+      <option value="2">Week 2</option>
+      <option value="3">Week 3</option>
+      <option value="4">Week 4</option>
+      <option value="5">Week 5</option>
+      <option value="6">Week 6</option>
+      <option value="7">Week 7</option>
+      <option value="8">Week 8</option>
+    </select>
+    <div class="protein-grid" id="proteinGrid"></div>
+  </div>
+
+  <!-- Workouts Section -->
+
+  <div id="workouts" class="section active">
+    <select class="week-selector" id="weekSelector">
+      <option value="1">Week 1</option>
+      <option value="2">Week 2</option>
+      <option value="3">Week 3</option>
+      <option value="4">Week 4</option>
+      <option value="5">Week 5</option>
+      <option value="6">Week 6</option>
+      <option value="7">Week 7</option>
+      <option value="8">Week 8</option>
+    </select>
+
+```
+<div class="miles-tracker">
+  <label>Miles this week:</label>
+  <input type="number" id="milesInput" placeholder="0" step="0.1">
+</div>
+
+<div id="overviewView">
+  <div class="day-list" id="dayList"></div>
+</div>
+
+<div id="workoutView" class="hidden">
+  <div class="workout-view">
+    <div class="workout-header">
+      <button class="back-btn" id="backBtn">←</button>
+      <h2 class="workout-title" id="workoutTitle"></h2>
+    </div>
     <div id="exerciseList"></div>
   </div>
 </div>
+```
 
-<div class="section hidden" id="progressionSection">
-  <h3>Progression Rules</h3>
-  <p><strong>Bench / OHP</strong> → +2.5–5 lbs weekly</p>
-  <p><strong>Squat</strong> → +5 lbs when bar speed good</p>
-  <p><strong>Pull-ups</strong> → Add weight once easy</p>
-  <p><strong>Abs</strong> → Add reps or weight weekly</p>
+  </div>
 </div>
 
 <script>
-const workouts = {
-  1: {
-    "Upper Push": [
-      {name:"Dumbbell Bench Press", sets:4, reps:"6-8"},
-      {name:"Barbell OHP", sets:4, reps:"6"},
-      {name:"Dumbbell Front Raise", sets:3, reps:"12"},
-      {name:"Tricep Dips", sets:3, reps:"10-12"}
-    ],
-    "Upper Pull": [
-      {name:"Pull-ups", sets:4, reps:"6"},
-      {name:"Barbell Row", sets:4, reps:"6-8"},
-      {name:"Hammer Curl", sets:3, reps:"10-12"}
-    ],
-    "Leg Day": [
-      {name:"Back Squat", sets:4, reps:"6"},
-      {name:"Walking Lunges", sets:3, reps:"10 each"},
-      {name:"RDL", sets:3, reps:"8-10"}
-    ]
-  }
+let currentWeek = 1;
+let currentProteinWeek = 1;
+let currentDayIndex = null;
+let currentSection = 'workouts';
+
+const program = {
+  days: [
+    {
+      title: "Day 1 – Heavy Push (Bench Focus)",
+      exercises: [
+        { name: "Barbell Bench Press", sets: 4, reps: "5-6" },
+        { name: "Barbell Overhead Press", sets: 3, reps: "6-8" },
+        { name: "Incline Dumbbell Press", sets: 3, reps: "8-10" },
+        { name: "Dumbbell Lateral Raises", sets: 3, reps: "12-16" },
+        { name: "Triceps", variants: ["Cable Pushdown", "Skullcrusher"], sets: 3, reps: "10-12" },
+        { name: "Cable Crunch (Heavy)", sets: 4, reps: "8-12" },
+        { name: "Hanging Leg Raise", sets: 3, reps: "10-16" }
+      ]
+    },
+    {
+      title: "Day 2 – Pull (Strength Emphasis)",
+      exercises: [
+        { name: "Weighted Pull-Ups", sets: 4, reps: "4-6" },
+        { name: "Rows", variants: ["Barbell Row", "Dumbbell Row"], sets: 4, reps: "6-8" },
+        { name: "Rear Delt Raises", variants: ["Dumbbell", "Machine"], sets: 3, reps: "12-14" },
+        { name: "Hammer Curls", sets: 3, reps: "10-12" }
+      ],
+      optional: { name: "Zone 2 Run (20-30 min)" }
+    },
+    {
+      title: "Day 3 – Legs (Athletic + Controlled)",
+      exercises: [
+        { name: "Barbell Back Squat", sets: 3, reps: "4-6" },
+        { name: "Romanian Deadlift", sets: 3, reps: "8-10" },
+        { name: "Walking Lunges", sets: 2, reps: "8-10 per leg" },
+        { name: "Leg Curl", variants: ["Seated", "Lying"], sets: 2, reps: "12-14" }
+      ],
+      optional: { name: "Low Box Jumps (3-4 jumps before squats)" }
+    },
+    {
+      title: "Day 4 – Upper Volume + Abs",
+      exercises: [
+        { name: "Close-Grip Bench Press", sets: 3, reps: "8-10" },
+        { name: "Pull-Ups / Lat Pulldown", variants: ["Pull-Ups", "Lat Pulldown"], sets: 3, reps: "8-10" },
+        { name: "Dumbbell Shoulder Press", sets: 3, reps: "10-12" },
+        { name: "Front-to-Lateral Raise Split", sets: 3, reps: "12-14" },
+        { name: "Ab Wheel", sets: 3, reps: "8-12" },
+        { name: "Weighted Decline Sit-Up", sets: 3, reps: "10-16" }
+      ],
+      optional: { name: "Zone 2 Run (20-30 min)" }
+    }
+  ]
 };
 
-// duplicate weeks 1-8
-for(let i=2;i<=8;i++){
-  workouts[i]=workouts[1];
+const defaultGoals = [
+  "Bench 200+ x 6",
+  "OHP 95 x 10",
+  "Pull-ups +35–45 x 5",
+  "Squat 275 smooth",
+  "Visible abs year-round"
+];
+
+const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
+// Storage functions
+async function loadData(key) {
+  try {
+    if (window.storage) {
+      const result = await window.storage.get(key);
+      return result ? JSON.parse(result.value) : null;
+    }
+  } catch (e) {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  }
+  const item = localStorage.getItem(key);
+  return item ? JSON.parse(item) : null;
 }
 
-const weekSelector=document.getElementById("weekSelector");
-for(let i=1;i<=8;i++){
-  const opt=document.createElement("option");
-  opt.value=i;
-  opt.textContent="Week "+i;
-  weekSelector.appendChild(opt);
-}
-
-const dayList=document.getElementById("dayList");
-const workoutView=document.getElementById("workoutView");
-const exerciseList=document.getElementById("exerciseList");
-const workoutTitle=document.getElementById("workoutTitle");
-
-function renderDays(){
-  dayList.innerHTML="";
-  const week=weekSelector.value;
-  const days=workouts[week];
-  for(const day in days){
-    const div=document.createElement("div");
-    div.className="day-card";
-    div.textContent=day;
-    div.onclick=()=>showWorkout(day);
-    dayList.appendChild(div);
+async function saveData(key, value) {
+  try {
+    if (window.storage) {
+      await window.storage.set(key, JSON.stringify(value));
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch (e) {
+    localStorage.setItem(key, JSON.stringify(value));
   }
 }
 
-function showWorkout(day){
-  dayList.classList.add("hidden");
-  workoutView.classList.remove("hidden");
-  workoutTitle.textContent=day;
-  exerciseList.innerHTML="";
-  const week=weekSelector.value;
-  const exercises=workouts[week][day];
+// Dark mode
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDark);
+  document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙';
+}
 
-  exercises.forEach((ex,i)=>{
-    const div=document.createElement("div");
-    div.className="exercise";
-    const key="week"+week+day+i;
-    const weight=localStorage.getItem(key)||"";
-    div.innerHTML=`
-      <strong>${ex.name}</strong><br>
-      ${ex.sets} sets x ${ex.reps}<br>
-      <label>Weight:</label>
-      <input type="number" value="${weight}" data-key="${key}">
-      <textarea placeholder="Notes"></textarea>
+function initDarkMode() {
+  const isDark = localStorage.getItem('darkMode') === 'true';
+  if (isDark) {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkModeToggle').textContent = '☀️';
+  }
+}
+
+// Menu functions
+function openMenu() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('active');
+}
+
+function switchSection(section) {
+  currentSection = section;
+  
+  document.querySelectorAll('.menu-items li').forEach(li => {
+    li.classList.remove('active');
+    if (li.dataset.section === section) {
+      li.classList.add('active');
+    }
+  });
+  
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  
+  const titles = {
+    goals: 'Goals',
+    progression: 'Progression Rules',
+    protein: 'Protein Tracker',
+    workouts: 'Workouts'
+  };
+  document.getElementById('headerTitle').textContent = titles[section];
+  
+  closeMenu();
+  
+  if (section === 'goals') renderGoals();
+  if (section === 'protein') renderProteinTracker();
+}
+
+// Goals functions
+async function renderGoals() {
+  const goalsList = document.getElementById('goalsList');
+  goalsList.innerHTML = '';
+  
+  let goals = await loadData('goals');
+  if (!goals) {
+    goals = defaultGoals.map(text => ({ text, completed: false }));
+    await saveData('goals', goals);
+  }
+  
+  goals.forEach((goal, idx) => {
+    const goalDiv = document.createElement('div');
+    goalDiv.className = `goal-item ${goal.completed ? 'completed' : ''}`;
+    
+    goalDiv.innerHTML = `
+      <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''} data-idx="${idx}">
+      <div class="goal-text">${goal.text}</div>
     `;
-    exerciseList.appendChild(div);
+    
+    const checkbox = goalDiv.querySelector('input');
+    checkbox.onchange = async () => {
+      goals[idx].completed = checkbox.checked;
+      await saveData('goals', goals);
+      goalDiv.classList.toggle('completed', checkbox.checked);
+    };
+    
+    goalsList.appendChild(goalDiv);
   });
 }
 
-document.addEventListener("input",e=>{
-  if(e.target.dataset.key){
-    localStorage.setItem(e.target.dataset.key,e.target.value);
+// Protein tracker functions
+async function renderProteinTracker() {
+  const grid = document.getElementById('proteinGrid');
+  grid.innerHTML = '';
+  
+  for (const day of weekdays) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'protein-day';
+    
+    const title = document.createElement('h4');
+    title.textContent = day;
+    dayDiv.appendChild(title);
+    
+    const mealsDiv = document.createElement('div');
+    mealsDiv.className = 'protein-meals';
+    
+    let total = 0;
+    
+    for (const meal of meals) {
+      const key = `protein-w${currentProteinWeek}-${day}-${meal}`;
+      const value = await loadData(key) || '';
+      if (value) total += parseFloat(value);
+      
+      const mealDiv = document.createElement('div');
+      mealDiv.className = 'protein-meal';
+      mealDiv.innerHTML = `
+        <label>${meal}:</label>
+        <input type="number" placeholder="0g" value="${value}" data-key="${key}">
+      `;
+      
+      const input = mealDiv.querySelector('input');
+      input.onchange = async () => {
+        await saveData(key, input.value);
+        renderProteinTracker();
+      };
+      
+      mealsDiv.appendChild(mealDiv);
+    }
+    
+    dayDiv.appendChild(mealsDiv);
+    
+    const totalDiv = document.createElement('div');
+    totalDiv.className = 'protein-total';
+    totalDiv.textContent = `Total: ${total}g`;
+    dayDiv.appendChild(totalDiv);
+    
+    grid.appendChild(dayDiv);
   }
+}
+
+// Miles tracker
+async function loadMiles() {
+  const key = `miles-w${currentWeek}`;
+  const miles = await loadData(key);
+  document.getElementById('milesInput').value = miles || '';
+}
+
+async function saveMiles() {
+  const key = `miles-w${currentWeek}`;
+  const value = document.getElementById('milesInput').value;
+  await saveData(key, value);
+}
+
+// Workout functions
+async function getWorkoutProgress(week, dayIdx) {
+  const day = program.days[dayIdx];
+  let completed = 0;
+  let total = 0;
+
+  for (let eIdx = 0; eIdx < day.exercises.length; eIdx++) {
+    const exercise = day.exercises[eIdx];
+    for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
+      const key = `w${week}-d${dayIdx}-e${eIdx}-s${sIdx}`;
+      const data = await loadData(key);
+      total++;
+      if (data && data.completed) completed++;
+    }
+  }
+
+  return { completed, total };
+}
+
+async function renderOverview() {
+  const dayList = document.getElementById('dayList');
+  dayList.innerHTML = '';
+  
+  console.log('Rendering overview for week', currentWeek);
+  console.log('Program days:', program.days);
+
+  for (let i = 0; i < program.days.length; i++) {
+    const day = program.days[i];
+    const progress = await getWorkoutProgress(currentWeek, i);
+    
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.innerHTML = `
+      <h3>${day.title}</h3>
+      <div class="progress">${progress.completed}/${progress.total} sets completed</div>
+    `;
+    card.onclick = () => showWorkout(i);
+    dayList.appendChild(card);
+    console.log('Added day card:', day.title);
+  }
+  
+  console.log('Overview rendered, total cards:', dayList.children.length);
+}
+
+async function showWorkout(dayIdx) {
+  currentDayIndex = dayIdx;
+  const day = program.days[dayIdx];
+  
+  console.log('Showing workout for day:', dayIdx, day);
+
+  document.getElementById('workoutTitle').textContent = day.title;
+  document.getElementById('overviewView').classList.add('hidden');
+  document.getElementById('workoutView').classList.remove('hidden');
+
+  const exerciseList = document.getElementById('exerciseList');
+  exerciseList.innerHTML = '';
+  
+  console.log('Exercises to render:', day.exercises);
+
+  for (let eIdx = 0; eIdx < day.exercises.length; eIdx++) {
+    const exercise = day.exercises[eIdx];
+    
+    const exerciseDiv = document.createElement('div');
+    exerciseDiv.className = 'exercise';
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'exercise-name';
+    nameDiv.textContent = exercise.name;
+    exerciseDiv.appendChild(nameDiv);
+    
+    console.log('Rendering exercise:', exercise.name);
+
+    if (exercise.variants) {
+      const variantKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-variant`;
+      const savedVariant = await loadData(variantKey);
+      
+      const variantDiv = document.createElement('div');
+      variantDiv.className = 'variant-selector';
+      
+      const select = document.createElement('select');
+      exercise.variants.forEach((variant, idx) => {
+        const option = document.createElement('option');
+        option.value = idx;
+        option.textContent = variant;
+        if (savedVariant === idx) option.selected = true;
+        select.appendChild(option);
+      });
+      
+      select.onchange = () => saveData(variantKey, parseInt(select.value));
+      variantDiv.appendChild(select);
+      exerciseDiv.appendChild(variantDiv);
+    }
+
+    const weightKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-weight`;
+    const weightData = await loadData(weightKey);
+    
+    const weightRow = document.createElement('div');
+    weightRow.className = 'weight-input-row';
+    weightRow.innerHTML = `
+      <label>Weight:</label>
+      <input type="number" placeholder="lbs" value="${weightData || ''}" data-key="${weightKey}">
+    `;
+    const weightInput = weightRow.querySelector('input');
+    weightInput.onchange = () => saveData(weightKey, weightInput.value);
+    exerciseDiv.appendChild(weightRow);
+
+    const setsGrid = document.createElement('div');
+    setsGrid.className = 'sets-grid';
+
+    for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
+      const setKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-s${sIdx}`;
+      const setData = await loadData(setKey);
+
+      const setRow = document.createElement('div');
+      setRow.className = 'set-row';
+      
+      setRow.innerHTML = `
+        <span class="set-label">Set ${sIdx + 1}:</span>
+        <input type="number" placeholder="${exercise.reps}" value="${setData?.reps || ''}" data-key="${setKey}" data-type="reps">
+        <span class="reps-label">reps</span>
+        <input type="checkbox" ${setData?.completed ? 'checked' : ''} data-key="${setKey}" data-type="check">
+      `;
+
+      const repsInput = setRow.querySelector('input[data-type="reps"]');
+      const checkbox = setRow.querySelector('input[data-type="check"]');
+
+      repsInput.onchange = async () => {
+        const current = await loadData(setKey) || {};
+        await saveData(setKey, { ...current, reps: repsInput.value });
+      };
+
+      checkbox.onchange = async () => {
+        const current = await loadData(setKey) || {};
+        await saveData(setKey, { ...current, completed: checkbox.checked });
+      };
+
+      setsGrid.appendChild(setRow);
+    }
+
+    exerciseDiv.appendChild(setsGrid);
+    
+    const notesKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-notes`;
+    const notesData = await loadData(notesKey);
+    
+    const notesSection = document.createElement('div');
+    notesSection.className = 'notes-section';
+    notesSection.innerHTML = `
+      <textarea placeholder="Notes (e.g., form tips, how it felt, adjustments...)" data-key="${notesKey}">${notesData || ''}</textarea>
+
+```
+`;
+
+const notesTextarea = notesSection.querySelector('textarea');
+notesTextarea.onchange = () => saveData(notesKey, notesTextarea.value);
+
+exerciseDiv.appendChild(notesSection);
+exerciseList.appendChild(exerciseDiv);
+```
+
+}
+
+if (day.optional) {
+const optionalDiv = document.createElement(‘div’);
+optionalDiv.className = ‘exercise’;
+
+```
+const optionalKey = `w${currentWeek}-d${dayIdx}-optional`;
+const optionalData = await loadData(optionalKey);
+
+optionalDiv.innerHTML = `
+  <div class="optional-exercise">
+    <input type="checkbox" ${optionalData ? 'checked' : ''} id="optional-${dayIdx}">
+    <label for="optional-${dayIdx}">${day.optional.name}</label>
+  </div>
+`;
+
+const checkbox = optionalDiv.querySelector('input');
+checkbox.onchange = () => saveData(optionalKey, checkbox.checked);
+
+exerciseList.appendChild(optionalDiv);
+```
+
+}
+
+console.log(‘Workout view rendered, exercises:’, exerciseList.children.length);
+}
+
+function showOverview() {
+document.getElementById(‘overviewView’).classList.remove(‘hidden’);
+document.getElementById(‘workoutView’).classList.add(‘hidden’);
+renderOverview();
+}
+
+// Event listeners
+document.getElementById(‘menuBtn’).addEventListener(‘click’, openMenu);
+document.getElementById(‘closeBtn’).addEventListener(‘click’, closeMenu);
+document.getElementById(‘overlay’).addEventListener(‘click’, closeMenu);
+document.getElementById(‘darkModeToggle’).addEventListener(‘click’, toggleDarkMode);
+
+document.querySelectorAll(’.menu-items li’).forEach(li => {
+li.addEventListener(‘click’, () => switchSection(li.dataset.section));
 });
 
-document.getElementById("backBtn").onclick=()=>{
-  workoutView.classList.add("hidden");
-  dayList.classList.remove("hidden");
-};
-
-weekSelector.onchange=renderDays;
-renderDays();
-
-// menu
-const menu=document.getElementById("menu");
-const overlay=document.getElementById("overlay");
-
-document.getElementById("menuBtn").onclick=()=>{
-  menu.classList.add("open");
-  overlay.classList.add("show");
-};
-
-overlay.onclick=()=>{
-  menu.classList.remove("open");
-  overlay.classList.remove("show");
-};
-
-document.querySelectorAll(".menu li").forEach(item=>{
-  item.onclick=()=>{
-    document.getElementById("workoutsSection").classList.add("hidden");
-    document.getElementById("progressionSection").classList.add("hidden");
-    document.getElementById(item.dataset.view+"Section").classList.remove("hidden");
-    menu.classList.remove("open");
-    overlay.classList.remove("show");
-  };
+document.getElementById(‘weekSelector’).addEventListener(‘change’, async (e) => {
+currentWeek = Number(e.target.value);
+await loadMiles();
+renderOverview();
 });
 
-// dark mode
-const darkToggle=document.getElementById("darkToggle");
-darkToggle.onclick=()=>{
-  document.body.classList.toggle("dark");
-};
+document.getElementById(‘proteinWeekSelector’).addEventListener(‘change’, (e) => {
+currentProteinWeek = Number(e.target.value);
+renderProteinTracker();
+});
+
+document.getElementById(‘milesInput’).addEventListener(‘change’, saveMiles);
+
+document.getElementById(‘backBtn’).addEventListener(‘click’, showOverview);
+
+// Initialize
+window.addEventListener(‘DOMContentLoaded’, async () => {
+initDarkMode();
+await loadMiles();
+await renderOverview();
+await renderGoals();
+});
 </script>
 
 </body>
