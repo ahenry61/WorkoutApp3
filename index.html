@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>4-Day Workout Tracker</title>
+<title>Workout Tracker</title>
 
 <style>
 * {
@@ -18,32 +18,199 @@ body {
   margin: 0;
 }
 
+.header-bar {
+  background: white;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  transition: left 0.3s ease;
+  z-index: 200;
+  overflow-y: auto;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.menu-items {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.menu-items li {
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  font-size: 16px;
+  transition: background 0.2s;
+}
+
+.menu-items li:hover {
+  background: #f8f8f8;
+}
+
+.menu-items li.active {
+  background: #e3f2fd;
+  color: #007bff;
+  font-weight: 600;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  z-index: 150;
+}
+
+.overlay.active {
+  display: block;
+}
+
 .container {
   max-width: 600px;
   margin: 0 auto;
   padding: 16px;
 }
 
-h1 {
-  text-align: center;
-  margin: 16px 0;
-  font-size: 24px;
+.section {
+  display: none;
 }
 
-.header {
+.section.active {
+  display: block;
+}
+
+/* Goals Section */
+.goals-list {
+  display: grid;
+  gap: 12px;
+}
+
+.goal-item {
   background: white;
-  padding: 16px;
+  padding: 20px;
   border-radius: 12px;
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
+.goal-item:active {
+  transform: scale(0.98);
+}
+
+.goal-checkbox {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  cursor: pointer;
+}
+
+.goal-text {
+  font-size: 18px;
+  flex: 1;
+}
+
+.goal-item.completed .goal-text {
+  text-decoration: line-through;
+  color: #999;
+}
+
+/* Progression Rules Section */
+.rules-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  line-height: 1.6;
+}
+
+.rules-content h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.rules-content p {
+  margin-bottom: 12px;
+}
+
+.rules-content ul {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.rules-content li {
+  margin-bottom: 8px;
+}
+
+/* Workout Section */
 .week-selector {
   width: 100%;
   padding: 12px;
   font-size: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
+  background: white;
 }
 
 .view-toggle {
@@ -257,10 +424,6 @@ h1 {
   .container {
     padding: 12px;
   }
-  
-  h1 {
-    font-size: 20px;
-  }
 }
 </style>
 
@@ -268,10 +431,51 @@ h1 {
 
 <body>
 
-<div class="container">
-  <h1>4-Day Workout Program</h1>
+<div class="header-bar">
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <h1 class="header-title" id="headerTitle">Workouts</h1>
+</div>
 
-  <div class="header">
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>Menu</h2>
+    <button class="close-btn" id="closeBtn">×</button>
+  </div>
+  <ul class="menu-items">
+    <li data-section="goals">Goals</li>
+    <li data-section="progression">Progression Rules</li>
+    <li data-section="workouts" class="active">Workouts</li>
+  </ul>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="container">
+  <!-- Goals Section -->
+  <div id="goals" class="section">
+    <div class="goals-list" id="goalsList"></div>
+  </div>
+
+  <!-- Progression Rules Section -->
+
+  <div id="progression" class="section">
+    <div class="rules-content">
+      <h3>Progression Rules</h3>
+      <p>If you hit top reps clean → add weight next week.</p>
+
+```
+  <p><strong>Bench/OHP</strong> → +2.5–5 lbs</p>
+  <p><strong>Squat</strong> → +5 lbs when bar speed is good</p>
+  <p><strong>Pull-ups</strong> → Add 5 lbs when all sets are clean</p>
+  <p><strong>Abs</strong> → Add reps or weight weekly</p>
+</div>
+```
+
+  </div>
+
+  <!-- Workouts Section -->
+
+  <div id="workouts" class="section active">
     <select class="week-selector" id="weekSelector">
       <option value="1">Week 1</option>
       <option value="2">Week 2</option>
@@ -282,31 +486,35 @@ h1 {
       <option value="7">Week 7</option>
       <option value="8">Week 8</option>
     </select>
-  </div>
 
-  <div class="view-toggle">
-    <button id="overviewBtn" class="active">Overview</button>
-    <button id="workoutBtn">Active Workout</button>
-  </div>
+```
+<div class="view-toggle">
+  <button id="overviewBtn" class="active">Overview</button>
+  <button id="workoutBtn">Active Workout</button>
+</div>
 
-  <div id="overviewView">
-    <div class="day-list" id="dayList"></div>
-  </div>
+<div id="overviewView">
+  <div class="day-list" id="dayList"></div>
+</div>
 
-  <div id="workoutView" class="hidden">
-    <div class="workout-view">
-      <div class="workout-header">
-        <button class="back-btn" id="backBtn">←</button>
-        <h2 class="workout-title" id="workoutTitle"></h2>
-      </div>
-      <div id="exerciseList"></div>
+<div id="workoutView" class="hidden">
+  <div class="workout-view">
+    <div class="workout-header">
+      <button class="back-btn" id="backBtn">←</button>
+      <h2 class="workout-title" id="workoutTitle"></h2>
     </div>
+    <div id="exerciseList"></div>
+  </div>
+</div>
+```
+
   </div>
 </div>
 
 <script>
 let currentWeek = 1;
 let currentDayIndex = null;
+let currentSection = 'workouts';
 
 const program = {
   days: [
@@ -357,6 +565,14 @@ const program = {
   ]
 };
 
+const defaultGoals = [
+  "Bench 200+ x 6",
+  "OHP 95 x 10",
+  "Pull-ups +35–45 x 5",
+  "Squat 275 smooth",
+  "Visible abs year-round"
+];
+
 // Storage functions
 async function loadData(key) {
   try {
@@ -384,6 +600,77 @@ async function saveData(key, value) {
   }
 }
 
+// Menu functions
+function openMenu() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('active');
+}
+
+function switchSection(section) {
+  currentSection = section;
+  
+  // Update active menu item
+  document.querySelectorAll('.menu-items li').forEach(li => {
+    li.classList.remove('active');
+    if (li.dataset.section === section) {
+      li.classList.add('active');
+    }
+  });
+  
+  // Update sections
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  
+  // Update header title
+  const titles = {
+    goals: 'Goals',
+    progression: 'Progression Rules',
+    workouts: 'Workouts'
+  };
+  document.getElementById('headerTitle').textContent = titles[section];
+  
+  closeMenu();
+  
+  if (section === 'goals') renderGoals();
+}
+
+// Goals functions
+async function renderGoals() {
+  const goalsList = document.getElementById('goalsList');
+  goalsList.innerHTML = '';
+  
+  let goals = await loadData('goals');
+  if (!goals) {
+    goals = defaultGoals.map(text => ({ text, completed: false }));
+    await saveData('goals', goals);
+  }
+  
+  goals.forEach((goal, idx) => {
+    const goalDiv = document.createElement('div');
+    goalDiv.className = `goal-item ${goal.completed ? 'completed' : ''}`;
+    
+    goalDiv.innerHTML = `
+      <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''} data-idx="${idx}">
+      <div class="goal-text">${goal.text}</div>
+    `;
+    
+    const checkbox = goalDiv.querySelector('input');
+    checkbox.onchange = async () => {
+      goals[idx].completed = checkbox.checked;
+      await saveData('goals', goals);
+      goalDiv.classList.toggle('completed', checkbox.checked);
+    };
+    
+    goalsList.appendChild(goalDiv);
+  });
+}
+
+// Workout functions
 async function getWorkoutProgress(week, dayIdx) {
   const day = program.days[dayIdx];
   let completed = 0;
@@ -569,6 +856,15 @@ document.getElementById(‘workoutBtn’).classList.remove(‘active’);
 renderOverview();
 }
 
+// Event listeners
+document.getElementById(‘menuBtn’).addEventListener(‘click’, openMenu);
+document.getElementById(‘closeBtn’).addEventListener(‘click’, closeMenu);
+document.getElementById(‘overlay’).addEventListener(‘click’, closeMenu);
+
+document.querySelectorAll(’.menu-items li’).forEach(li => {
+li.addEventListener(‘click’, () => switchSection(li.dataset.section));
+});
+
 document.getElementById(‘weekSelector’).addEventListener(‘change’, (e) => {
 currentWeek = Number(e.target.value);
 renderOverview();
@@ -579,6 +875,8 @@ document.getElementById(‘overviewBtn’).addEventListener(‘click’, showOve
 document.getElementById(‘workoutBtn’).addEventListener(‘click’, () => {
 document.getElementById(‘overviewBtn’).classList.remove(‘active’);
 document.getElementById(‘workoutBtn’).classList.add(‘active’);
+document.getElementById(‘overviewView’).classList.add(‘hidden’);
+document.getElementById(‘workoutView’).classList.remove(‘hidden’);
 if (currentDayIndex !== null) {
 showWorkout(currentDayIndex);
 } else {
@@ -589,7 +887,10 @@ showWorkout(0);
 document.getElementById(‘backBtn’).addEventListener(‘click’, showOverview);
 
 // Initialize
+window.addEventListener(‘load’, () => {
 renderOverview();
+renderGoals();
+});
 </script>
 
 </body>
