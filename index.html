@@ -909,9 +909,6 @@ async function getWorkoutProgress(week, dayIdx) {
 async function renderOverview() {
   const dayList = document.getElementById('dayList');
   dayList.innerHTML = '';
-  
-  console.log('Rendering overview for week', currentWeek);
-  console.log('Program days:', program.days);
 
   for (let i = 0; i < program.days.length; i++) {
     const day = program.days[i];
@@ -925,17 +922,12 @@ async function renderOverview() {
     `;
     card.onclick = () => showWorkout(i);
     dayList.appendChild(card);
-    console.log('Added day card:', day.title);
   }
-  
-  console.log('Overview rendered, total cards:', dayList.children.length);
 }
 
 async function showWorkout(dayIdx) {
   currentDayIndex = dayIdx;
   const day = program.days[dayIdx];
-  
-  console.log('Showing workout for day:', dayIdx, day);
 
   document.getElementById('workoutTitle').textContent = day.title;
   document.getElementById('overviewView').classList.add('hidden');
@@ -943,8 +935,6 @@ async function showWorkout(dayIdx) {
 
   const exerciseList = document.getElementById('exerciseList');
   exerciseList.innerHTML = '';
-  
-  console.log('Exercises to render:', day.exercises);
 
   for (let eIdx = 0; eIdx < day.exercises.length; eIdx++) {
     const exercise = day.exercises[eIdx];
@@ -956,8 +946,6 @@ async function showWorkout(dayIdx) {
     nameDiv.className = 'exercise-name';
     nameDiv.textContent = exercise.name;
     exerciseDiv.appendChild(nameDiv);
-    
-    console.log('Rendering exercise:', exercise.name);
 
     if (exercise.variants) {
       const variantKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-variant`;
@@ -1070,8 +1058,6 @@ exerciseList.appendChild(optionalDiv);
 ```
 
 }
-
-console.log(‘Workout view rendered, exercises:’, exerciseList.children.length);
 }
 
 function showOverview() {
