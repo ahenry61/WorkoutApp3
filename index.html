@@ -651,7 +651,6 @@ body {
 let currentWeek = 1;
 let currentProteinWeek = 1;
 let currentDayIndex = null;
-let currentSection = 'workouts';
 
 const program = {
   days: [
@@ -713,31 +712,14 @@ const defaultGoals = [
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
-// Storage functions
-async function loadData(key) {
-  try {
-    if (window.storage) {
-      const result = await window.storage.get(key);
-      return result ? JSON.parse(result.value) : null;
-    }
-  } catch (e) {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  }
+// Simple localStorage wrapper
+function getData(key) {
   const item = localStorage.getItem(key);
   return item ? JSON.parse(item) : null;
 }
 
-async function saveData(key, value) {
-  try {
-    if (window.storage) {
-      await window.storage.set(key, JSON.stringify(value));
-    } else {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-  } catch (e) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+function setData(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
 // Dark mode
@@ -767,8 +749,6 @@ function closeMenu() {
 }
 
 function switchSection(section) {
-  currentSection = section;
-  
   document.querySelectorAll('.menu-items li').forEach(li => {
     li.classList.remove('active');
     if (li.dataset.section === section) {
@@ -794,42 +774,46 @@ function switchSection(section) {
 }
 
 // Goals functions
-async function renderGoals() {
+function renderGoals() {
   const goalsList = document.getElementById('goalsList');
   goalsList.innerHTML = '';
   
-  let goals = await loadData('goals');
+  let goals = getData('goals');
   if (!goals) {
     goals = defaultGoals.map(text => ({ text, completed: false }));
-    await saveData('goals', goals);
+    setData('goals', goals);
   }
   
   goals.forEach((goal, idx) => {
     const goalDiv = document.createElement('div');
-    goalDiv.className = `goal-item ${goal.completed ? 'completed' : ''}`;
+    goalDiv.className = 'goal-item' + (goal.completed ? ' completed' : '');
     
-    goalDiv.innerHTML = `
-      <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''} data-idx="${idx}">
-      <div class="goal-text">${goal.text}</div>
-    `;
-    
-    const checkbox = goalDiv.querySelector('input');
-    checkbox.onchange = async () => {
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'goal-checkbox';
+    checkbox.checked = goal.completed;
+    checkbox.onchange = () => {
       goals[idx].completed = checkbox.checked;
-      await saveData('goals', goals);
+      setData('goals', goals);
       goalDiv.classList.toggle('completed', checkbox.checked);
     };
     
+    const textDiv = document.createElement('div');
+    textDiv.className = 'goal-text';
+    textDiv.textContent = goal.text;
+    
+    goalDiv.appendChild(checkbox);
+    goalDiv.appendChild(textDiv);
     goalsList.appendChild(goalDiv);
   });
 }
 
 // Protein tracker functions
-async function renderProteinTracker() {
+function renderProteinTracker() {
   const grid = document.getElementById('proteinGrid');
   grid.innerHTML = '';
   
-  for (const day of weekdays) {
+  weekdays.forEach(day => {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'protein-day';
     
@@ -842,26 +826,30 @@ async function renderProteinTracker() {
     
     let total = 0;
     
-    for (const meal of meals) {
+    meals.forEach(meal => {
       const key = `protein-w${currentProteinWeek}-${day}-${meal}`;
-      const value = await loadData(key) || '';
+      const value = getData(key) || '';
       if (value) total += parseFloat(value);
       
       const mealDiv = document.createElement('div');
       mealDiv.className = 'protein-meal';
-      mealDiv.innerHTML = `
-        <label>${meal}:</label>
-        <input type="number" placeholder="0g" value="${value}" data-key="${key}">
-      `;
       
-      const input = mealDiv.querySelector('input');
-      input.onchange = async () => {
-        await saveData(key, input.value);
+      const label = document.createElement('label');
+      label.textContent = meal + ':';
+      
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.placeholder = '0g';
+      input.value = value;
+      input.onchange = () => {
+        setData(key, input.value);
         renderProteinTracker();
       };
       
+      mealDiv.appendChild(label);
+      mealDiv.appendChild(input);
       mealsDiv.appendChild(mealDiv);
-    }
+    });
     
     dayDiv.appendChild(mealsDiv);
     
@@ -871,61 +859,65 @@ async function renderProteinTracker() {
     dayDiv.appendChild(totalDiv);
     
     grid.appendChild(dayDiv);
-  }
+  });
 }
 
 // Miles tracker
-async function loadMiles() {
+function loadMiles() {
   const key = `miles-w${currentWeek}`;
-  const miles = await loadData(key);
+  const miles = getData(key);
   document.getElementById('milesInput').value = miles || '';
 }
 
-async function saveMiles() {
+function saveMiles() {
   const key = `miles-w${currentWeek}`;
   const value = document.getElementById('milesInput').value;
-  await saveData(key, value);
+  setData(key, value);
 }
 
 // Workout functions
-async function getWorkoutProgress(week, dayIdx) {
+function getWorkoutProgress(week, dayIdx) {
   const day = program.days[dayIdx];
   let completed = 0;
   let total = 0;
 
-  for (let eIdx = 0; eIdx < day.exercises.length; eIdx++) {
-    const exercise = day.exercises[eIdx];
+  day.exercises.forEach((exercise, eIdx) => {
     for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
       const key = `w${week}-d${dayIdx}-e${eIdx}-s${sIdx}`;
-      const data = await loadData(key);
+      const data = getData(key);
       total++;
       if (data && data.completed) completed++;
     }
-  }
+  });
 
   return { completed, total };
 }
 
-async function renderOverview() {
+function renderOverview() {
   const dayList = document.getElementById('dayList');
   dayList.innerHTML = '';
 
-  for (let i = 0; i < program.days.length; i++) {
-    const day = program.days[i];
-    const progress = await getWorkoutProgress(currentWeek, i);
+  program.days.forEach((day, i) => {
+    const progress = getWorkoutProgress(currentWeek, i);
     
     const card = document.createElement('div');
     card.className = 'day-card';
-    card.innerHTML = `
-      <h3>${day.title}</h3>
-      <div class="progress">${progress.completed}/${progress.total} sets completed</div>
-    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = day.title;
+    
+    const progressDiv = document.createElement('div');
+    progressDiv.className = 'progress';
+    progressDiv.textContent = `${progress.completed}/${progress.total} sets completed`;
+    
+    card.appendChild(title);
+    card.appendChild(progressDiv);
     card.onclick = () => showWorkout(i);
     dayList.appendChild(card);
-  }
+  });
 }
 
-async function showWorkout(dayIdx) {
+function showWorkout(dayIdx) {
   currentDayIndex = dayIdx;
   const day = program.days[dayIdx];
 
@@ -936,9 +928,7 @@ async function showWorkout(dayIdx) {
   const exerciseList = document.getElementById('exerciseList');
   exerciseList.innerHTML = '';
 
-  for (let eIdx = 0; eIdx < day.exercises.length; eIdx++) {
-    const exercise = day.exercises[eIdx];
-    
+  day.exercises.forEach((exercise, eIdx) => {
     const exerciseDiv = document.createElement('div');
     exerciseDiv.className = 'exercise';
     
@@ -949,7 +939,7 @@ async function showWorkout(dayIdx) {
 
     if (exercise.variants) {
       const variantKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-variant`;
-      const savedVariant = await loadData(variantKey);
+      const savedVariant = getData(variantKey);
       
       const variantDiv = document.createElement('div');
       variantDiv.className = 'variant-selector';
@@ -963,22 +953,28 @@ async function showWorkout(dayIdx) {
         select.appendChild(option);
       });
       
-      select.onchange = () => saveData(variantKey, parseInt(select.value));
+      select.onchange = () => setData(variantKey, parseInt(select.value));
       variantDiv.appendChild(select);
       exerciseDiv.appendChild(variantDiv);
     }
 
     const weightKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-weight`;
-    const weightData = await loadData(weightKey);
+    const weightData = getData(weightKey);
     
     const weightRow = document.createElement('div');
     weightRow.className = 'weight-input-row';
-    weightRow.innerHTML = `
-      <label>Weight:</label>
-      <input type="number" placeholder="lbs" value="${weightData || ''}" data-key="${weightKey}">
-    `;
-    const weightInput = weightRow.querySelector('input');
-    weightInput.onchange = () => saveData(weightKey, weightInput.value);
+    
+    const weightLabel = document.createElement('label');
+    weightLabel.textContent = 'Weight:';
+    
+    const weightInput = document.createElement('input');
+    weightInput.type = 'number';
+    weightInput.placeholder = 'lbs';
+    weightInput.value = weightData || '';
+    weightInput.onchange = () => setData(weightKey, weightInput.value);
+    
+    weightRow.appendChild(weightLabel);
+    weightRow.appendChild(weightInput);
     exerciseDiv.appendChild(weightRow);
 
     const setsGrid = document.createElement('div');
@@ -986,119 +982,124 @@ async function showWorkout(dayIdx) {
 
     for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
       const setKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-s${sIdx}`;
-      const setData = await loadData(setKey);
+      const setData = getData(setKey);
 
       const setRow = document.createElement('div');
       setRow.className = 'set-row';
       
-      setRow.innerHTML = `
-        <span class="set-label">Set ${sIdx + 1}:</span>
-        <input type="number" placeholder="${exercise.reps}" value="${setData?.reps || ''}" data-key="${setKey}" data-type="reps">
-        <span class="reps-label">reps</span>
-        <input type="checkbox" ${setData?.completed ? 'checked' : ''} data-key="${setKey}" data-type="check">
-      `;
-
-      const repsInput = setRow.querySelector('input[data-type="reps"]');
-      const checkbox = setRow.querySelector('input[data-type="check"]');
-
-      repsInput.onchange = async () => {
-        const current = await loadData(setKey) || {};
-        await saveData(setKey, { ...current, reps: repsInput.value });
+      const setLabel = document.createElement('span');
+      setLabel.className = 'set-label';
+      setLabel.textContent = `Set ${sIdx + 1}:`;
+      
+      const repsInput = document.createElement('input');
+      repsInput.type = 'number';
+      repsInput.placeholder = exercise.reps;
+      repsInput.value = setData?.reps || '';
+      repsInput.onchange = () => {
+        const current = getData(setKey) || {};
+        setData(setKey, { ...current, reps: repsInput.value });
       };
-
-      checkbox.onchange = async () => {
-        const current = await loadData(setKey) || {};
-        await saveData(setKey, { ...current, completed: checkbox.checked });
+      
+      const repsLabel = document.createElement('span');
+      repsLabel.className = 'reps-label';
+      repsLabel.textContent = 'reps';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = setData?.completed || false;
+      checkbox.onchange = () => {
+        const current = getData(setKey) || {};
+        setData(setKey, { ...current, completed: checkbox.checked });
       };
-
+      
+      setRow.appendChild(setLabel);
+      setRow.appendChild(repsInput);
+      setRow.appendChild(repsLabel);
+      setRow.appendChild(checkbox);
       setsGrid.appendChild(setRow);
     }
 
     exerciseDiv.appendChild(setsGrid);
     
     const notesKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-notes`;
-    const notesData = await loadData(notesKey);
+    const notesData = getData(notesKey);
     
     const notesSection = document.createElement('div');
     notesSection.className = 'notes-section';
-    notesSection.innerHTML = `
-      <textarea placeholder="Notes (e.g., form tips, how it felt, adjustments...)" data-key="${notesKey}">${notesData || ''}</textarea>
+    
+    const notesTextarea = document.createElement('textarea');
+    notesTextarea.placeholder = 'Notes (e.g., form tips, how it felt, adjustments...)';
+    notesTextarea.value = notesData || '';
+    notesTextarea.onchange = () => setData(notesKey, notesTextarea.value);
+    
+    notesSection.appendChild(notesTextarea);
+    exerciseDiv.appendChild(notesSection);
+    exerciseList.appendChild(exerciseDiv);
+  });
 
-```
-`;
-
-const notesTextarea = notesSection.querySelector('textarea');
-notesTextarea.onchange = () => saveData(notesKey, notesTextarea.value);
-
-exerciseDiv.appendChild(notesSection);
-exerciseList.appendChild(exerciseDiv);
-```
-
-}
-
-if (day.optional) {
-const optionalDiv = document.createElement(‘div’);
-optionalDiv.className = ‘exercise’;
-
-```
-const optionalKey = `w${currentWeek}-d${dayIdx}-optional`;
-const optionalData = await loadData(optionalKey);
-
-optionalDiv.innerHTML = `
-  <div class="optional-exercise">
-    <input type="checkbox" ${optionalData ? 'checked' : ''} id="optional-${dayIdx}">
-    <label for="optional-${dayIdx}">${day.optional.name}</label>
-  </div>
-`;
-
-const checkbox = optionalDiv.querySelector('input');
-checkbox.onchange = () => saveData(optionalKey, checkbox.checked);
-
-exerciseList.appendChild(optionalDiv);
-```
-
-}
+  if (day.optional) {
+    const optionalDiv = document.createElement('div');
+    optionalDiv.className = 'exercise';
+    
+    const optionalKey = `w${currentWeek}-d${dayIdx}-optional`;
+    const optionalData = getData(optionalKey);
+    
+    const optionalBox = document.createElement('div');
+    optionalBox.className = 'optional-exercise';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `optional-${dayIdx}`;
+    checkbox.checked = optionalData || false;
+    checkbox.onchange = () => setData(optionalKey, checkbox.checked);
+    
+    const label = document.createElement('label');
+    label.htmlFor = `optional-${dayIdx}`;
+    label.textContent = day.optional.name;
+    
+    optionalBox.appendChild(checkbox);
+    optionalBox.appendChild(label);
+    optionalDiv.appendChild(optionalBox);
+    exerciseList.appendChild(optionalDiv);
+  }
 }
 
 function showOverview() {
-document.getElementById(‘overviewView’).classList.remove(‘hidden’);
-document.getElementById(‘workoutView’).classList.add(‘hidden’);
-renderOverview();
+  document.getElementById('overviewView').classList.remove('hidden');
+  document.getElementById('workoutView').classList.add('hidden');
+  renderOverview();
 }
 
 // Event listeners
-document.getElementById(‘menuBtn’).addEventListener(‘click’, openMenu);
-document.getElementById(‘closeBtn’).addEventListener(‘click’, closeMenu);
-document.getElementById(‘overlay’).addEventListener(‘click’, closeMenu);
-document.getElementById(‘darkModeToggle’).addEventListener(‘click’, toggleDarkMode);
+document.getElementById('menuBtn').addEventListener('click', openMenu);
+document.getElementById('closeBtn').addEventListener('click', closeMenu);
+document.getElementById('overlay').addEventListener('click', closeMenu);
+document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
 
-document.querySelectorAll(’.menu-items li’).forEach(li => {
-li.addEventListener(‘click’, () => switchSection(li.dataset.section));
+document.querySelectorAll('.menu-items li').forEach(li => {
+  li.addEventListener('click', () => switchSection(li.dataset.section));
 });
 
-document.getElementById(‘weekSelector’).addEventListener(‘change’, async (e) => {
-currentWeek = Number(e.target.value);
-await loadMiles();
-renderOverview();
+document.getElementById('weekSelector').addEventListener('change', (e) => {
+  currentWeek = Number(e.target.value);
+  loadMiles();
+  renderOverview();
 });
 
-document.getElementById(‘proteinWeekSelector’).addEventListener(‘change’, (e) => {
-currentProteinWeek = Number(e.target.value);
-renderProteinTracker();
+document.getElementById('proteinWeekSelector').addEventListener('change', (e) => {
+  currentProteinWeek = Number(e.target.value);
+  renderProteinTracker();
 });
 
-document.getElementById(‘milesInput’).addEventListener(‘change’, saveMiles);
-
-document.getElementById(‘backBtn’).addEventListener(‘click’, showOverview);
+document.getElementById('milesInput').addEventListener('change', saveMiles);
+document.getElementById('backBtn').addEventListener('click', showOverview);
 
 // Initialize
-window.addEventListener(‘DOMContentLoaded’, async () => {
 initDarkMode();
-await loadMiles();
-await renderOverview();
-await renderGoals();
-await renderProteinTracker();
-});
+loadMiles();
+renderOverview();
+renderGoals();
+renderProteinTracker();
 </script>
 
 </body>
