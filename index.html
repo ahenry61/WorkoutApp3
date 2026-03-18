@@ -264,80 +264,6 @@ body {
   margin-bottom: 12px;
 }
 
-/* Exercise Library */
-.library-categories {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.category-btn {
-  padding: 12px;
-  background: var(--bg-card);
-  border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--text-primary);
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.category-btn.active {
-  background: var(--accent-color);
-  color: white;
-}
-
-.exercise-list {
-  display: grid;
-  gap: 12px;
-}
-
-.exercise-item {
-  background: var(--bg-card);
-  padding: 16px;
-  border-radius: 12px;
-  border: 2px solid var(--accent-color);
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.exercise-item:active {
-  transform: scale(0.98);
-}
-
-.exercise-item h4 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-}
-
-.exercise-item p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.swap-mode-banner {
-  background: var(--accent-color);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.swap-mode-banner button {
-  background: white;
-  color: var(--accent-color);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 /* Protein Tracker */
 .protein-week-selector {
   width: 100%;
@@ -637,7 +563,6 @@ body {
   <ul class="menu-items">
     <li data-section="goals">Goals</li>
     <li data-section="progression">Progression Rules</li>
-    <li data-section="library">Exercise Library</li>
     <li data-section="protein">Protein Tracker</li>
     <li data-section="workouts" class="active">Workouts</li>
   </ul>
@@ -664,30 +589,6 @@ body {
   <p><strong>Pull-ups</strong> → Add 5 lbs when all sets are clean</p>
   <p><strong>Abs</strong> → Add reps or weight weekly</p>
 </div>
-```
-
-  </div>
-
-  <!-- Exercise Library Section -->
-
-  <div id="library" class="section">
-    <div id="swapModeBanner" class="swap-mode-banner hidden">
-      <span>Select exercise to replace: <strong id="swapExerciseName"></strong></span>
-      <button id="cancelSwapBtn">Cancel</button>
-    </div>
-
-```
-<div class="library-categories">
-  <button class="category-btn active" data-category="all">All</button>
-  <button class="category-btn" data-category="chest">Chest</button>
-  <button class="category-btn" data-category="back">Back</button>
-  <button class="category-btn" data-category="shoulders">Shoulders</button>
-  <button class="category-btn" data-category="arms">Arms</button>
-  <button class="category-btn" data-category="legs">Legs</button>
-  <button class="category-btn" data-category="abs">Abs</button>
-</div>
-
-<div class="exercise-list" id="libraryList"></div>
 ```
 
   </div>
@@ -750,77 +651,6 @@ body {
 let currentWeek = 1;
 let currentProteinWeek = 1;
 let currentDayIndex = null;
-let swapMode = null; // {dayIdx, exerciseIdx}
-let currentLibraryCategory = 'all';
-
-const exerciseLibrary = [
-  // Chest
-  { name: 'Barbell Bench Press', category: 'chest', sets: 4, reps: '5-6' },
-  { name: 'Dumbbell Bench Press', category: 'chest', sets: 4, reps: '6-8' },
-  { name: 'Incline Barbell Press', category: 'chest', sets: 3, reps: '6-8' },
-  { name: 'Incline Dumbbell Press', category: 'chest', sets: 3, reps: '8-10' },
-  { name: 'Decline Bench Press', category: 'chest', sets: 3, reps: '8-10' },
-  { name: 'Cable Fly', category: 'chest', sets: 3, reps: '12-15' },
-  { name: 'Pec Deck', category: 'chest', sets: 3, reps: '12-15' },
-  { name: 'Dips (Chest)', category: 'chest', sets: 3, reps: '8-12' },
-  { name: 'Push-Ups', category: 'chest', sets: 3, reps: '15-20' },
-  
-  // Back
-  { name: 'Barbell Row', category: 'back', sets: 4, reps: '6-8' },
-  { name: 'Dumbbell Row', category: 'back', sets: 4, reps: '8-10' },
-  { name: 'Deadlift', category: 'back', sets: 4, reps: '5-6' },
-  { name: 'Romanian Deadlift', category: 'back', sets: 3, reps: '8-10' },
-  { name: 'Pull-Ups', category: 'back', sets: 4, reps: '6-10' },
-  { name: 'Weighted Pull-Ups', category: 'back', sets: 4, reps: '4-6' },
-  { name: 'Lat Pulldown', category: 'back', sets: 3, reps: '8-12' },
-  { name: 'Seated Cable Row', category: 'back', sets: 4, reps: '10-12' },
-  { name: 'T-Bar Row', category: 'back', sets: 3, reps: '8-10' },
-  { name: 'Face Pulls', category: 'back', sets: 3, reps: '15-20' },
-  
-  // Shoulders
-  { name: 'Barbell Overhead Press', category: 'shoulders', sets: 4, reps: '6-8' },
-  { name: 'Dumbbell Overhead Press', category: 'shoulders', sets: 3, reps: '8-10' },
-  { name: 'Seated Dumbbell Press', category: 'shoulders', sets: 3, reps: '8-10' },
-  { name: 'Arnold Press', category: 'shoulders', sets: 3, reps: '10-12' },
-  { name: 'Dumbbell Lateral Raises', category: 'shoulders', sets: 3, reps: '12-15' },
-  { name: 'Cable Lateral Raises', category: 'shoulders', sets: 3, reps: '12-15' },
-  { name: 'Front Raises', category: 'shoulders', sets: 3, reps: '10-12' },
-  { name: 'Rear Delt Fly', category: 'shoulders', sets: 3, reps: '12-15' },
-  { name: 'Upright Row', category: 'shoulders', sets: 3, reps: '10-12' },
-  
-  // Arms
-  { name: 'Barbell Curl', category: 'arms', sets: 3, reps: '8-10' },
-  { name: 'Dumbbell Curl', category: 'arms', sets: 3, reps: '10-12' },
-  { name: 'Hammer Curls', category: 'arms', sets: 3, reps: '10-12' },
-  { name: 'Preacher Curl', category: 'arms', sets: 3, reps: '10-12' },
-  { name: 'Cable Curl', category: 'arms', sets: 3, reps: '12-15' },
-  { name: 'Tricep Dips', category: 'arms', sets: 3, reps: '8-12' },
-  { name: 'Close-Grip Bench Press', category: 'arms', sets: 3, reps: '8-10' },
-  { name: 'Skullcrusher', category: 'arms', sets: 3, reps: '10-12' },
-  { name: 'Cable Pushdown', category: 'arms', sets: 3, reps: '10-12' },
-  { name: 'Overhead Tricep Extension', category: 'arms', sets: 3, reps: '10-12' },
-  
-  // Legs
-  { name: 'Barbell Back Squat', category: 'legs', sets: 4, reps: '5-6' },
-  { name: 'Front Squat', category: 'legs', sets: 3, reps: '6-8' },
-  { name: 'Leg Press', category: 'legs', sets: 3, reps: '10-12' },
-  { name: 'Bulgarian Split Squat', category: 'legs', sets: 3, reps: '8-10' },
-  { name: 'Walking Lunges', category: 'legs', sets: 3, reps: '10-12' },
-  { name: 'Leg Extension', category: 'legs', sets: 3, reps: '12-15' },
-  { name: 'Leg Curl', category: 'legs', sets: 3, reps: '10-12' },
-  { name: 'Calf Raises', category: 'legs', sets: 4, reps: '15-20' },
-  { name: 'Hip Thrust', category: 'legs', sets: 3, reps: '10-12' },
-  
-  // Abs
-  { name: 'Cable Crunch', category: 'abs', sets: 4, reps: '12-15' },
-  { name: 'Hanging Leg Raise', category: 'abs', sets: 3, reps: '10-15' },
-  { name: 'Ab Wheel', category: 'abs', sets: 3, reps: '8-12' },
-  { name: 'Decline Sit-Up', category: 'abs', sets: 3, reps: '12-15' },
-  { name: 'Plank', category: 'abs', sets: 3, reps: '30-60s' },
-  { name: 'Russian Twist', category: 'abs', sets: 3, reps: '20-30' },
-  { name: 'Mountain Climbers', category: 'abs', sets: 3, reps: '20-30' },
-  { name: 'Bicycle Crunches', category: 'abs', sets: 3, reps: '20-30' }
-];
 
 const program = {
   days: [
@@ -882,14 +712,24 @@ const defaultGoals = [
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
-// Simple localStorage wrapper
+// Simple localStorage wrapper - FIXED to save immediately
 function getData(key) {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : null;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  } catch (e) {
+    console.error('Error getting data:', key, e);
+    return null;
+  }
 }
 
 function setData(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    console.log('Saved:', key, value);
+  } catch (e) {
+    console.error('Error saving data:', key, e);
+  }
 }
 
 // Dark mode
@@ -932,7 +772,6 @@ function switchSection(section) {
   const titles = {
     goals: 'Goals',
     progression: 'Progression Rules',
-    library: 'Exercise Library',
     protein: 'Protein Tracker',
     workouts: 'Workouts'
   };
@@ -941,7 +780,6 @@ function switchSection(section) {
   closeMenu();
   
   if (section === 'goals') renderGoals();
-  if (section === 'library') renderLibrary();
   if (section === 'protein') renderProteinTracker();
 }
 
@@ -980,74 +818,7 @@ function renderGoals() {
   });
 }
 
-// Exercise Library functions
-function renderLibrary() {
-  const libraryList = document.getElementById('libraryList');
-  libraryList.innerHTML = '';
-  
-  const filtered = currentLibraryCategory === 'all' 
-    ? exerciseLibrary 
-    : exerciseLibrary.filter(ex => ex.category === currentLibraryCategory);
-  
-  filtered.forEach(exercise => {
-    const item = document.createElement('div');
-    item.className = 'exercise-item';
-    
-    const title = document.createElement('h4');
-    title.textContent = exercise.name;
-    
-    const details = document.createElement('p');
-    details.textContent = `${exercise.sets} sets × ${exercise.reps} reps`;
-    
-    item.appendChild(title);
-    item.appendChild(details);
-    
-    if (swapMode) {
-      item.onclick = () => swapExercise(exercise);
-    }
-    
-    libraryList.appendChild(item);
-  });
-}
-
-function startSwapMode(dayIdx, exerciseIdx) {
-  swapMode = { dayIdx, exerciseIdx };
-  const exercise = program.days[dayIdx].exercises[exerciseIdx];
-  
-  document.getElementById('swapExerciseName').textContent = exercise.name;
-  document.getElementById('swapModeBanner').classList.remove('hidden');
-  
-  switchSection('library');
-}
-
-function cancelSwap() {
-  swapMode = null;
-  document.getElementById('swapModeBanner').classList.add('hidden');
-  renderLibrary();
-}
-
-function swapExercise(newExercise) {
-  if (!swapMode) return;
-  
-  const { dayIdx, exerciseIdx } = swapMode;
-  const oldExercise = program.days[dayIdx].exercises[exerciseIdx];
-  
-  // Keep the old sets/reps if you want, or use new ones
-  program.days[dayIdx].exercises[exerciseIdx] = {
-    name: newExercise.name,
-    sets: newExercise.sets,
-    reps: newExercise.reps
-  };
-  
-  // Save the modified program
-  setData('customProgram', program);
-  
-  cancelSwap();
-  switchSection('workouts');
-  
-  // Show confirmation
-  alert(`Swapped to ${newExercise.name}!`);
-}
+// Protein tracker functions
 function renderProteinTracker() {
   const grid = document.getElementById('proteinGrid');
   grid.innerHTML = '';
@@ -1174,9 +945,6 @@ function showWorkout(dayIdx) {
     const nameDiv = document.createElement('div');
     nameDiv.className = 'exercise-name';
     nameDiv.textContent = exercise.name;
-    nameDiv.onclick = () => startSwapMode(dayIdx, eIdx);
-    nameDiv.style.cursor = 'pointer';
-    nameDiv.title = 'Click to swap exercise';
     exerciseDiv.appendChild(nameDiv);
 
     if (exercise.variants) {
@@ -1213,7 +981,12 @@ function showWorkout(dayIdx) {
     weightInput.type = 'number';
     weightInput.placeholder = 'lbs';
     weightInput.value = weightData || '';
-    weightInput.onchange = () => setData(weightKey, weightInput.value);
+    weightInput.onchange = () => {
+      setData(weightKey, weightInput.value);
+    };
+    weightInput.onblur = () => {
+      setData(weightKey, weightInput.value);
+    };
     
     weightRow.appendChild(weightLabel);
     weightRow.appendChild(weightInput);
@@ -1239,7 +1012,13 @@ function showWorkout(dayIdx) {
       repsInput.value = setData?.reps || '';
       repsInput.onchange = () => {
         const current = getData(setKey) || {};
-        setData(setKey, { ...current, reps: repsInput.value });
+        current.reps = repsInput.value;
+        setData(setKey, current);
+      };
+      repsInput.onblur = () => {
+        const current = getData(setKey) || {};
+        current.reps = repsInput.value;
+        setData(setKey, current);
       };
       
       const repsLabel = document.createElement('span');
@@ -1251,7 +1030,8 @@ function showWorkout(dayIdx) {
       checkbox.checked = setData?.completed || false;
       checkbox.onchange = () => {
         const current = getData(setKey) || {};
-        setData(setKey, { ...current, completed: checkbox.checked });
+        current.completed = checkbox.checked;
+        setData(setKey, current);
       };
       
       setRow.appendChild(setLabel);
@@ -1273,6 +1053,7 @@ function showWorkout(dayIdx) {
     notesTextarea.placeholder = 'Notes (e.g., form tips, how it felt, adjustments...)';
     notesTextarea.value = notesData || '';
     notesTextarea.onchange = () => setData(notesKey, notesTextarea.value);
+    notesTextarea.onblur = () => setData(notesKey, notesTextarea.value);
     
     notesSection.appendChild(notesTextarea);
     exerciseDiv.appendChild(notesSection);
@@ -1334,17 +1115,8 @@ document.getElementById('proteinWeekSelector').addEventListener('change', (e) =>
 });
 
 document.getElementById('milesInput').addEventListener('change', saveMiles);
+document.getElementById('milesInput').addEventListener('blur', saveMiles);
 document.getElementById('backBtn').addEventListener('click', showOverview);
-document.getElementById('cancelSwapBtn').addEventListener('click', cancelSwap);
-
-document.querySelectorAll('.category-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentLibraryCategory = btn.dataset.category;
-    renderLibrary();
-  });
-});
 
 // Initialize
 initDarkMode();
@@ -1352,7 +1124,6 @@ loadMiles();
 renderOverview();
 renderGoals();
 renderProteinTracker();
-renderLibrary();
 </script>
 
 </body>
