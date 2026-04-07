@@ -716,19 +716,22 @@ const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 function getData(key) {
   try {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
+    if (!item) return null;
+    return JSON.parse(item);
   } catch (e) {
-    console.error('Error getting data:', key, e);
+    console.error('Error getting data for key:', key, e);
     return null;
   }
 }
 
 function setData(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
-    console.log('Saved:', key, value);
+    const jsonString = JSON.stringify(value);
+    localStorage.setItem(key, jsonString);
+    return true;
   } catch (e) {
-    console.error('Error saving data:', key, e);
+    console.error('Error saving data for key:', key, 'value:', value, 'error:', e);
+    return false;
   }
 }
 
@@ -928,162 +931,171 @@ function renderOverview() {
 }
 
 function showWorkout(dayIdx) {
-  currentDayIndex = dayIdx;
-  const day = program.days[dayIdx];
+  try {
+    currentDayIndex = dayIdx;
+    const day = program.days[dayIdx];
 
-  document.getElementById('workoutTitle').textContent = day.title;
-  document.getElementById('overviewView').classList.add('hidden');
-  document.getElementById('workoutView').classList.remove('hidden');
+    document.getElementById('workoutTitle').textContent = day.title;
+    document.getElementById('overviewView').classList.add('hidden');
+    document.getElementById('workoutView').classList.remove('hidden');
 
-  const exerciseList = document.getElementById('exerciseList');
-  exerciseList.innerHTML = '';
+    const exerciseList = document.getElementById('exerciseList');
+    exerciseList.innerHTML = '';
 
-  day.exercises.forEach((exercise, eIdx) => {
-    const exerciseDiv = document.createElement('div');
-    exerciseDiv.className = 'exercise';
-    
-    const nameDiv = document.createElement('div');
-    nameDiv.className = 'exercise-name';
-    nameDiv.textContent = exercise.name;
-    exerciseDiv.appendChild(nameDiv);
-
-    if (exercise.variants) {
-      const variantKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-variant`;
-      const savedVariant = getData(variantKey);
+    day.exercises.forEach((exercise, eIdx) => {
+      const exerciseDiv = document.createElement('div');
+      exerciseDiv.className = 'exercise';
       
-      const variantDiv = document.createElement('div');
-      variantDiv.className = 'variant-selector';
-      
-      const select = document.createElement('select');
-      exercise.variants.forEach((variant, idx) => {
-        const option = document.createElement('option');
-        option.value = idx;
-        option.textContent = variant;
-        if (savedVariant === idx) option.selected = true;
-        select.appendChild(option);
-      });
-      
-      select.onchange = () => setData(variantKey, parseInt(select.value));
-      variantDiv.appendChild(select);
-      exerciseDiv.appendChild(variantDiv);
-    }
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'exercise-name';
+      nameDiv.textContent = exercise.name;
+      exerciseDiv.appendChild(nameDiv);
 
-    const weightKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-weight`;
-    const weightData = getData(weightKey);
-    
-    const weightRow = document.createElement('div');
-    weightRow.className = 'weight-input-row';
-    
-    const weightLabel = document.createElement('label');
-    weightLabel.textContent = 'Weight:';
-    
-    const weightInput = document.createElement('input');
-    weightInput.type = 'number';
-    weightInput.placeholder = 'lbs';
-    weightInput.value = weightData || '';
-    weightInput.onchange = () => {
-      setData(weightKey, weightInput.value);
-    };
-    weightInput.onblur = () => {
-      setData(weightKey, weightInput.value);
-    };
-    
-    weightRow.appendChild(weightLabel);
-    weightRow.appendChild(weightInput);
-    exerciseDiv.appendChild(weightRow);
+      if (exercise.variants) {
+        const variantKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-variant`;
+        const savedVariant = getData(variantKey);
+        
+        const variantDiv = document.createElement('div');
+        variantDiv.className = 'variant-selector';
+        
+        const select = document.createElement('select');
+        exercise.variants.forEach((variant, idx) => {
+          const option = document.createElement('option');
+          option.value = idx;
+          option.textContent = variant;
+          if (savedVariant === idx) option.selected = true;
+          select.appendChild(option);
+        });
+        
+        select.onchange = () => setData(variantKey, parseInt(select.value));
+        variantDiv.appendChild(select);
+        exerciseDiv.appendChild(variantDiv);
+      }
 
-    const setsGrid = document.createElement('div');
-    setsGrid.className = 'sets-grid';
-
-    for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
-      const setKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-s${sIdx}`;
-      const setData = getData(setKey);
-
-      const setRow = document.createElement('div');
-      setRow.className = 'set-row';
+      const weightKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-weight`;
+      const weightData = getData(weightKey);
       
-      const setLabel = document.createElement('span');
-      setLabel.className = 'set-label';
-      setLabel.textContent = `Set ${sIdx + 1}:`;
+      const weightRow = document.createElement('div');
+      weightRow.className = 'weight-input-row';
       
-      const repsInput = document.createElement('input');
-      repsInput.type = 'number';
-      repsInput.placeholder = exercise.reps;
-      repsInput.value = setData?.reps || '';
-      repsInput.onchange = () => {
-        const current = getData(setKey) || {};
-        current.reps = repsInput.value;
-        setData(setKey, current);
+      const weightLabel = document.createElement('label');
+      weightLabel.textContent = 'Weight:';
+      
+      const weightInput = document.createElement('input');
+      weightInput.type = 'number';
+      weightInput.placeholder = 'lbs';
+      weightInput.value = weightData || '';
+      weightInput.onchange = () => {
+        setData(weightKey, weightInput.value);
       };
-      repsInput.onblur = () => {
-        const current = getData(setKey) || {};
-        current.reps = repsInput.value;
-        setData(setKey, current);
+      weightInput.onblur = () => {
+        setData(weightKey, weightInput.value);
       };
       
-      const repsLabel = document.createElement('span');
-      repsLabel.className = 'reps-label';
-      repsLabel.textContent = 'reps';
+      weightRow.appendChild(weightLabel);
+      weightRow.appendChild(weightInput);
+      exerciseDiv.appendChild(weightRow);
+
+      const setsGrid = document.createElement('div');
+      setsGrid.className = 'sets-grid';
+
+      for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
+        const setKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-s${sIdx}`;
+        const savedSetData = getData(setKey) || {};
+
+        const setRow = document.createElement('div');
+        setRow.className = 'set-row';
+        
+        const setLabel = document.createElement('span');
+        setLabel.className = 'set-label';
+        setLabel.textContent = `Set ${sIdx + 1}:`;
+        
+        const repsInput = document.createElement('input');
+        repsInput.type = 'number';
+        repsInput.placeholder = exercise.reps;
+        repsInput.value = savedSetData.reps || '';
+        repsInput.onchange = function() {
+          const current = getData(setKey) || {};
+          current.reps = this.value;
+          setData(setKey, current);
+        };
+        repsInput.onblur = function() {
+          const current = getData(setKey) || {};
+          current.reps = this.value;
+          setData(setKey, current);
+        };
+        
+        const repsLabel = document.createElement('span');
+        repsLabel.className = 'reps-label';
+        repsLabel.textContent = 'reps';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = savedSetData.completed || false;
+        checkbox.onchange = function() {
+          const current = getData(setKey) || {};
+          current.completed = this.checked;
+          setData(setKey, current);
+        };
+        
+        setRow.appendChild(setLabel);
+        setRow.appendChild(repsInput);
+        setRow.appendChild(repsLabel);
+        setRow.appendChild(checkbox);
+        setsGrid.appendChild(setRow);
+      }
+
+      exerciseDiv.appendChild(setsGrid);
+      
+      const notesKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-notes`;
+      const notesData = getData(notesKey) || '';
+      
+      const notesSection = document.createElement('div');
+      notesSection.className = 'notes-section';
+      
+      const notesTextarea = document.createElement('textarea');
+      notesTextarea.placeholder = 'Notes (e.g., form tips, how it felt, adjustments...)';
+      notesTextarea.value = notesData;
+      notesTextarea.onchange = () => {
+        setData(notesKey, notesTextarea.value);
+      };
+      notesTextarea.onblur = () => {
+        setData(notesKey, notesTextarea.value);
+      };
+      
+      notesSection.appendChild(notesTextarea);
+      exerciseDiv.appendChild(notesSection);
+      exerciseList.appendChild(exerciseDiv);
+    });
+
+    if (day.optional) {
+      const optionalDiv = document.createElement('div');
+      optionalDiv.className = 'exercise';
+      
+      const optionalKey = `w${currentWeek}-d${dayIdx}-optional`;
+      const optionalData = getData(optionalKey);
+      
+      const optionalBox = document.createElement('div');
+      optionalBox.className = 'optional-exercise';
       
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.checked = setData?.completed || false;
-      checkbox.onchange = () => {
-        const current = getData(setKey) || {};
-        current.completed = checkbox.checked;
-        setData(setKey, current);
-      };
+      checkbox.id = `optional-${dayIdx}`;
+      checkbox.checked = optionalData || false;
+      checkbox.onchange = () => setData(optionalKey, checkbox.checked);
       
-      setRow.appendChild(setLabel);
-      setRow.appendChild(repsInput);
-      setRow.appendChild(repsLabel);
-      setRow.appendChild(checkbox);
-      setsGrid.appendChild(setRow);
+      const label = document.createElement('label');
+      label.htmlFor = `optional-${dayIdx}`;
+      label.textContent = day.optional.name;
+      
+      optionalBox.appendChild(checkbox);
+      optionalBox.appendChild(label);
+      optionalDiv.appendChild(optionalBox);
+      exerciseList.appendChild(optionalDiv);
     }
-
-    exerciseDiv.appendChild(setsGrid);
-    
-    const notesKey = `w${currentWeek}-d${dayIdx}-e${eIdx}-notes`;
-    const notesData = getData(notesKey);
-    
-    const notesSection = document.createElement('div');
-    notesSection.className = 'notes-section';
-    
-    const notesTextarea = document.createElement('textarea');
-    notesTextarea.placeholder = 'Notes (e.g., form tips, how it felt, adjustments...)';
-    notesTextarea.value = notesData || '';
-    notesTextarea.onchange = () => setData(notesKey, notesTextarea.value);
-    notesTextarea.onblur = () => setData(notesKey, notesTextarea.value);
-    
-    notesSection.appendChild(notesTextarea);
-    exerciseDiv.appendChild(notesSection);
-    exerciseList.appendChild(exerciseDiv);
-  });
-
-  if (day.optional) {
-    const optionalDiv = document.createElement('div');
-    optionalDiv.className = 'exercise';
-    
-    const optionalKey = `w${currentWeek}-d${dayIdx}-optional`;
-    const optionalData = getData(optionalKey);
-    
-    const optionalBox = document.createElement('div');
-    optionalBox.className = 'optional-exercise';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = `optional-${dayIdx}`;
-    checkbox.checked = optionalData || false;
-    checkbox.onchange = () => setData(optionalKey, checkbox.checked);
-    
-    const label = document.createElement('label');
-    label.htmlFor = `optional-${dayIdx}`;
-    label.textContent = day.optional.name;
-    
-    optionalBox.appendChild(checkbox);
-    optionalBox.appendChild(label);
-    optionalDiv.appendChild(optionalBox);
-    exerciseList.appendChild(optionalDiv);
+  } catch (error) {
+    console.error('Error in showWorkout:', error);
+    alert('Error loading workout: ' + error.message);
   }
 }
 
